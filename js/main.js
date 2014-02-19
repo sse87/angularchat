@@ -13,7 +13,7 @@ angular.module("ChatApp", ["ng", "ngRoute"])
 	}).when("/about", {
 		templateUrl: "/view/about.html",
 		controller: "AboutCtrl"
-	}).otherwise({ redirectTo: "/login" })
+	}).otherwise({ redirectTo: "/login" });
 });
 
 
@@ -45,7 +45,7 @@ function ($rootScope, BACKEND_URL) {
 						callback.apply(socket, args);
 					}
 				});
-			})
+			});
 		}
 	};
 }]);
@@ -59,8 +59,8 @@ function ($q, socket) {
 	return {
 		// Variables
 		username: "",
-		users: [],
-		rooms: [],
+		userList: [],
+		roomList: [],
 		// Functions
 		signIn: function (username) {
 			var deferred = $q.defer();
@@ -69,16 +69,25 @@ function ($q, socket) {
 			});
 			return deferred.promise;
 		},
+		joinRoom: function (roomId) {
+			if (roomId !== '') {
+				var deferred = $q.defer();
+				socket.emit("joinroom", { room: roomId }, function (data) {
+					deferred.resolve(data);
+				});
+				return deferred.promise;
+			}
+		},
 		getRoom: function (roomId) {
 			var roomIndex = -1;
-			for (var i = 0; i < this.rooms.length; i++) {
-				if (roomId === this.rooms[i].id) {
+			for (var i = 0; i < this.roomList.length; i++) {
+				if (roomId === this.roomList[i].id) {
 					roomIndex = i;
 				}
 			}
 			if (roomIndex === -1)
 				return null;
-			return this.rooms[roomIndex];
+			return this.roomList[roomIndex];
 		}
 	};
 }]);
@@ -91,11 +100,11 @@ function ($q, socket) {
 
 
 angular.module("ChatApp").controller("LoginCtrl",
-["$scope", "$location", "socket", "ChatBackend",
-function ($scope, $location, socket, ChatBackend) {
+["$scope", "$location", "ChatBackend",
+function ($scope, $location, ChatBackend) {
 	
 	$scope.signInClick = function () {
-		ChatBackend.signIn($scope.username).then(function (available){
+		ChatBackend.signIn($scope.username).then(function (available) {
 			if (available) {
 				console.log("username " + $scope.username + " is available!");
 				ChatBackend.username = $scope.username;
@@ -113,51 +122,82 @@ function ($scope, $location, socket, ChatBackend) {
 
 
 angular.module("ChatApp").controller("HomeCtrl",
-["$scope", "socket", "ChatBackend",
-function ($scope, socket, ChatBackend){
+["$scope", "$location", "socket", "ChatBackend",
+function ($scope, $location, socket, ChatBackend) {
 	
-	console.log()
+	if (ChatBackend.username === '') {
+		$location.path("/login");
+		return;
+	}
 	
-	socket.on('roomlist', function (roomlist) {
-		console.log(roomlist);
+	// On events
+	socket.on('roomlist', function (list) {
+		console.log(list);//Object
 		// Reset room list
-		ChatBackend.rooms = [];
+		ChatBackend.roomList = [];
 		// Build it up and push it
-		for (var roomId in roomlist) {
+		for (var roomId in list) {
 			var room = {
 				id:			roomId,
-				topic:		roomlist[roomId].topic,
-				password:	roomlist[roomId].password,
-				users:		roomlist[roomId].users,
-				ops:		roomlist[roomId].obs,
-				banned:		roomlist[roomId].banned,
-				locked:		roomlist[roomId].locked,
-				messages:	roomlist[roomId].messageHistory
+				topic:		list[roomId].topic,
+				password:	list[roomId].password,
+				users:		list[roomId].users,
+				ops:		list[roomId].obs,
+				banned:		list[roomId].banned,
+				locked:		list[roomId].locked,
+				messages:	list[roomId].messageHistory
 			};
-			ChatBackend.rooms.push(room);
+			ChatBackend.roomList.push(room);
 		}
-		$scope.rooms = ChatBackend.rooms;
+		$scope.roomList = ChatBackend.roomList;
+	});
+	socket.on('userlist', function (list) {
+		console.log(list);//Array of strings
+		// Reset user list
+		ChatBackend.roomList = [];
+		// Build it up and push it
+		for (var i = 0; i < list.length; i++) {
+			var user = { name: list[i] };
+			ChatBackend.userList.push(user);
+		}
+		$scope.userList = ChatBackend.userList;
 	});
 	
-	
+	// Functions
 	$scope.updateRoomList = function () {
-		console.log('emit rooms');
 		socket.emit('rooms');
 	};
+	$scope.updateUserList = function () {
+		socket.emit('users');
+	};
+	$scope.joinRoomClick = function (roomId) {
+		$location.path("/room/" + roomId)
+	};
 	
-	if (ChatBackend.rooms.length === 0) {
+	// Update logic for room list
+	if (ChatBackend.roomList.length === 0) {
 		$scope.updateRoomList();
 	}
 	else {
-		$scope.rooms = ChatBackend.rooms;
+		$scope.roomList = ChatBackend.roomList;
 	}
+	
+	// Update logic for user list
+	if (ChatBackend.userList.length === 0) {
+		$scope.updateUserList();
+	}
+	else {
+		$scope.userList = ChatBackend.userList;
+	}
+	
+	$scope.username = ChatBackend.username;
 	
 }]);
 
 
 angular.module("ChatApp").controller("RoomCtrl",
 ["$scope", "$routeParams", "ChatBackend",
-function ($scope, $routeParams, ChatBackend){
+function ($scope, $routeParams, ChatBackend) {
 	
 	// Get right room by roomId
 	$scope.currentRoom = ChatBackend.getRoom($routeParams.roomId);
@@ -167,7 +207,7 @@ function ($scope, $routeParams, ChatBackend){
 
 angular.module("ChatApp").controller("AboutCtrl",
 ["$scope",
-function ($scope){
+function ($scope) {
 	
 	
 	
