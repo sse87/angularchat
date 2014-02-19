@@ -103,15 +103,15 @@ angular.module("ChatApp").controller("LoginCtrl",
 ["$scope", "$location", "ChatBackend",
 function ($scope, $location, ChatBackend) {
 	
-	$scope.signInClick = function () {
-		ChatBackend.signIn($scope.username).then(function (available) {
+	$scope.signInClick = function (username) {
+		ChatBackend.signIn(username).then(function (available) {
 			if (available) {
-				console.log("username " + $scope.username + " is available!");
-				ChatBackend.username = $scope.username;
+				console.log("username " + username + " is available!");
+				ChatBackend.username = username;
 				$location.path("/index");
 			}
 			else {
-				console.log("username " + $scope.username + " is NOT available!");
+				console.log("username " + username + " is NOT available!");
 			}
 		});
 	};
@@ -125,6 +125,7 @@ angular.module("ChatApp").controller("HomeCtrl",
 ["$scope", "$location", "socket", "ChatBackend",
 function ($scope, $location, socket, ChatBackend) {
 	
+	// Redirect to login if username is missing
 	if (ChatBackend.username === '') {
 		$location.path("/login");
 		return;
@@ -170,37 +171,66 @@ function ($scope, $location, socket, ChatBackend) {
 	$scope.updateUserList = function () {
 		socket.emit('users');
 	};
-	$scope.joinRoomClick = function (roomId) {
+	$scope.joinNewRoom = function (roomId) {
+		// Only redirect because the actual join/create room is in RoomCtrl
 		$location.path("/room/" + roomId)
 	};
 	
 	// Update logic for room list
-	if (ChatBackend.roomList.length === 0) {
-		$scope.updateRoomList();
-	}
-	else {
-		$scope.roomList = ChatBackend.roomList;
-	}
+	if (ChatBackend.roomList.length === 0) $scope.updateRoomList();
+	else $scope.roomList = ChatBackend.roomList;
 	
 	// Update logic for user list
-	if (ChatBackend.userList.length === 0) {
-		$scope.updateUserList();
-	}
-	else {
-		$scope.userList = ChatBackend.userList;
-	}
+	if (ChatBackend.userList.length === 0) $scope.updateUserList();
+	else $scope.userList = ChatBackend.userList;
 	
+	// Display username
 	$scope.username = ChatBackend.username;
 	
 }]);
 
 
 angular.module("ChatApp").controller("RoomCtrl",
-["$scope", "$routeParams", "ChatBackend",
-function ($scope, $routeParams, ChatBackend) {
+["$scope", "$location", "$routeParams", "socket", "ChatBackend",
+function ($scope, $location, $routeParams, socket, ChatBackend) {
 	
-	// Get right room by roomId
-	$scope.currentRoom = ChatBackend.getRoom($routeParams.roomId);
+	// Redirect to login if username is missing
+	if (ChatBackend.username === '') {
+		$location.path("/login");
+		return;
+	}
+	
+	socket.on('updateusers', function (data) {
+		console.log('updateusers');
+		console.log(data);
+	});
+	socket.on('updatetopic', function (data) {
+		console.log('updatetopic');
+		console.log(data);
+	});
+	socket.on('servermessage', function (data) {
+		console.log('servermessage');
+		console.log(data);
+	});
+	socket.on('updatechat', function (data) {
+		console.log('updatechat');
+		console.log(data);
+	});
+	
+	console.log('joinRoom(' + $routeParams.roomId + ')');
+	if (ChatBackend.joinRoom($routeParams.roomId)) {
+		
+		console.log('joinRoom:true');
+		
+		// Get right room by roomId
+		var room = ChatBackend.getRoom($routeParams.roomId);
+		if (room !== null) $scope.currentRoom = room;
+		
+		
+	}
+	else {
+		console.log('joinRoom:false');
+	}
 	
 }]);
 

@@ -1,5 +1,5 @@
 <section class="roomListSection">
-	<h2>Welcome {{username}}</h2>
+	<h2>Username: {{username}}</h2>
 	<h3>Room list</h3>
 	<ul>
 		<li ng-repeat="room in roomList">
@@ -7,7 +7,7 @@
 		</li>
 	</ul>
 	<input type="text" ng-model="newRoomId" />
-	<button ng-click="joinRoomClick(newRoomId)" ng-disabled="!newRoomId">Join</button>
+	<button ng-click="joinNewRoom(newRoomId)" ng-disabled="!newRoomId">Join</button>
 	
 	<h3>User list</h3>
 	<ul>

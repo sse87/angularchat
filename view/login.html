@@ -1,8 +1,8 @@
 <section class="loginSection">
 	<h2>Angular Chat</h2>
 	<p>Please select username to login</p>
-	<input type="text" ng-model="username" autofocus />
-	<button ng-click="signInClick()" ng-disabled="!username">Login</button>
+	<input type="text" ng-model="username" value="cookieName" autofocus />
+	<button ng-click="signInClick(username)" ng-disabled="!username">Login</button>
 	<p ng-hide="!prevUsername">
 		<a href="#/index">Are you <strong>{{prevUsername}}</strong>? Then click here</a>
 	</p>
