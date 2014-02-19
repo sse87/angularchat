@@ -1,0 +1,7 @@
+<h2>Welcome!</h2>
+<h3>Room list</h3>
+<ul>
+	<li ng-repeat="room in rooms">
+		<a ng-href="#/room/{{room.id}}">{{room.id}} ({{room.topic}})</a>
+	</li>
+</ul>
