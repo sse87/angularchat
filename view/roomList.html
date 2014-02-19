@@ -6,8 +6,10 @@
 			<a ng-href="#/room/{{room.id}}">{{room.id}} ({{room.topic}})</a>
 		</li>
 	</ul>
-	<input type="text" ng-model="newRoomId" />
-	<button ng-click="joinNewRoom(newRoomId)" ng-disabled="!newRoomId">Join</button>
+	<form ng-submit="joinNewRoom(newRoomId)">
+		<input type="text" ng-model="newRoomId" />
+		<input type="submit" value="Join" ng-disabled="!newRoomId" />
+	</form>
 	
 	<h3>User list</h3>
 	<ul>
