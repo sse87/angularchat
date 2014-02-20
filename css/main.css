@@ -1,9 +1,27 @@
 
+.warning {
+	border-radius: 3px 3px 3px 3px;
+	margin: 10px;
+	padding: 10px;
+}
+.warning p { margin: 0; }
+.yellow {
+	background-color: #FFFFE0;
+	border: 1px solid #E6DB55;
+}
+.red {
+	background-color: #FFEBE8;
+	border: 1px solid #CC0000;
+}
+
 .loginSection {
 	margin: 150px 0 0;
 	text-align: center;
 }
-
+.loginSection .usernameSuggestions {
+	display: inline-block;
+	text-align: left;
+}
 .roomListSection {}
 .roomSection {}
 .aboutSection {}

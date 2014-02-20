@@ -5,7 +5,22 @@
 		<input type="text" ng-model="username" value="cookieName" autofocus />
 		<input type="submit" value="Login" ng-disabled="!username" />
 	</form>
-	<p ng-hide="!prevUsername">
+	<div class="usernameSuggestions" ng-show="takenUsername">
+		<div class="warning red">
+			<p>The nickname <strong>{{takenUsername}}</strong> is not available.</p>
+		</div>
+		<div class="warning yellow">
+			<p>We suggest other username like:</p>
+			<ul>
+				<li><a href="" ng-click="selectNick(suggestion1)" ng-bind="suggestion1 = takenUsername + '1'"></a></li>
+				<li><a href="" ng-click="selectNick(suggestion2)" ng-bind="suggestion2 = takenUsername + '420'"></a></li>
+				<li><a href="" ng-click="selectNick(suggestion3)" ng-bind="suggestion3 = takenUsername + '_p3n15'"></a></li>
+				<li><a href="" ng-click="selectNick(suggestion4)" ng-bind="suggestion4 = takenUsername + '_asdf'"></a></li>
+				<li><a href="" ng-click="selectNick(suggestion5)" ng-bind="suggestion5 = takenUsername + '_was_taken'"></a></li>
+			</ul>
+		</div>
+	</div>
+	<p ng-show="prevUsername">
 		<a href="#/index">Are you <strong>{{prevUsername}}</strong>? Then click here</a>
 	</p>
 </section>
