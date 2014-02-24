@@ -2,30 +2,36 @@ angular.module("ChatApp").controller("RoomCtrl",
 ["$scope", "$location", "$routeParams", "socket", "ChatBackend",
 function ($scope, $location, $routeParams, socket, ChatBackend) {
 	
-	// Redirect to login if username is missing
-	if (ChatBackend.username === "") {
-		$location.path("/login");
-		return;
-	}
-	
 	socket.on("updateusers", function (data) {
 		console.log("updateusers: " + data);
 	});
 	socket.on("updatetopic", function (data) {
 		console.log("updatetopic: " + data);
 	});
-	socket.on("servermessage", function (data) {
-		console.log("servermessage: " + data);
+	// "join", room, socket.username
+	// "part", room, socket.username
+	// "quit", users[socket.username].channels, socket.username
+	socket.on("servermessage", function (type, roomId, username) {
+		console.log("servermessage: [" + type + "," + roomId + "," + username + "]");
 	});
-	socket.on("updatechat", function (data) {
-		console.log("updatechat: " + data);
+	socket.on("updatechat", function (roomId, messageHistory) {
+		console.log("updatechat: [" + roomId + "]");
+		$scope.messages = messageHistory;
 	});
 	
+	
+	$scope.msgSubmit = function (message) {
+		var msg = message;
+		$scope.message = "";
+		
+		ChatBackend.sendMessage($scope.currentRoom.id, message);
+	};
 	
 	// Get right room by roomId
 	var room = ChatBackend.getRoom($routeParams.roomId);
 	if (room !== null) {
 		$scope.currentRoom = room;
+		$scope.messages = room.messages
 	}
 	
 }]);

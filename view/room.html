@@ -11,4 +11,14 @@
 		<li>Locked: {{currentRoom.locked}}</li>
 		<li>Messages: {{currentRoom.messages}}</li>
 	</ul>
+	<div class="chat">
+		<div class="line" ng-repeat="msg in messages">
+			<span>[{{msg.timestamp}}]</span>
+			<a href="">{{msg.nick}}</a>
+			<span>: {{msg.message}}</span>
+		</div>
+	</div>
+	<form ng-submit="msgSubmit(message)">
+		<input type="text" class="msg" ng-model="message" autofocus />
+	</form>
 </section>

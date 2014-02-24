@@ -4,7 +4,6 @@ function ($scope, $location, ChatBackend) {
 	
 	$scope.takenUsername = "";
 	$scope.selectNick = function (username) {
-		console.log(username);
 		$scope.username = username;
 	};
 	

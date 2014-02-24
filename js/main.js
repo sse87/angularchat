@@ -6,14 +6,28 @@ angular.module("ChatApp", ["ng", "ngRoute"])
 		controller: "LoginCtrl"
 	}).when("/index", {
 		templateUrl: "/view/roomList.html",
-		controller: "HomeCtrl"
+		controller: "HomeCtrl",
+		resolve: {
+			this: function ($location, ChatBackend) {
+				// Redirect to login if username is missing
+				if (ChatBackend.username === "") {
+					$location.path("/login");
+					return;
+				}
+			}
+		}
 	}).when("/room/:roomId", {
 		templateUrl: "/view/room.html",
 		controller: "RoomCtrl",
 		resolve: {
-			this: function ($q, socket, ChatBackend) {
-				var deferred = $q.defer();
+			this: function ($q, $location, socket, ChatBackend) {
+				// Redirect to login if username is missing
+				if (ChatBackend.username === "") {
+					$location.path("/login");
+					return;
+				}
 				
+				var deferred = $q.defer();
 				
 				socket.on("roomlist", function (list) {
 					console.log(list);//Object
@@ -101,6 +115,10 @@ function ($q, socket) {
 		},
 		joinRoom: function (roomId) {
 			if (roomId !== "") {
+				// Replace all spaces with plus, the str.replace(" ","") only replace one case.
+				// But 'str.replace(/ /g, "_")' and 'str.replace(/\s/g, "_")' also works.
+				roomId = roomId.split(" ").join("_");
+				
 				var deferred = $q.defer();
 				socket.emit("joinroom", { room: roomId }, function (data) {
 					deferred.resolve(data);
@@ -118,6 +136,17 @@ function ($q, socket) {
 			if (roomIndex === -1)
 				return null;
 			return this.roomList[roomIndex];
+		},
+		sendMessage: function (roomId, message) {
+			if (roomId !== "" && message !== "") {
+				if (message.length > 200) { 
+					message = message.substr(0,200);
+				}
+				
+				// Sending message to the room
+				console.log("emit(sendmsg: { roomName: [" + roomId + "], msg: [" + message + "] });");
+				socket.emit("sendmsg", { roomName: roomId, msg: message });
+			}
 		},
 		updateRoomList: function () {
 			socket.emit("rooms");

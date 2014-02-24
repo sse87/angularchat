@@ -2,12 +2,6 @@ angular.module("ChatApp").controller("HomeCtrl",
 ["$scope", "$location", "socket", "ChatBackend",
 function ($scope, $location, socket, ChatBackend) {
 	
-	// Redirect to login if username is missing
-	if (ChatBackend.username === "") {
-		$location.path("/login");
-		return;
-	}
-	
 	// On events
 	socket.on("roomlist", function (list) {
 		console.log(list);//Object
@@ -32,7 +26,7 @@ function ($scope, $location, socket, ChatBackend) {
 	socket.on("userlist", function (list) {
 		console.log(list);//Array of strings
 		// Reset user list
-		ChatBackend.roomList = [];
+		ChatBackend.userList = [];
 		// Build it up and push it
 		for (var i = 0; i < list.length; i++) {
 			var user = { name: list[i] };
@@ -42,9 +36,18 @@ function ($scope, $location, socket, ChatBackend) {
 	});
 	
 	// Functions
+	$scope.refreshRoomList = function () {
+		ChatBackend.updateRoomList();
+	};
+	$scope.refreshUserList = function () {
+		ChatBackend.updateUserList();
+	};
 	$scope.joinNewRoom = function (roomId) {
 		if (ChatBackend.joinRoom(roomId)) {
-			$location.path("/room/" + roomId)
+			// Replace all spaces with plus, the str.replace(" ","") only replace one case.
+			// But 'str.replace(/ /g, "_")' and 'str.replace(/\s/g, "_")' also works.
+			roomId = roomId.split(" ").join("_");
+			$location.path("/room/" + roomId);
 		}
 		else {
 			console.log("ERROR: joinRoom:false");
