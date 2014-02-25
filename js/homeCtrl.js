@@ -1,6 +1,6 @@
 angular.module("ChatApp").controller("HomeCtrl",
-["$scope", "$location", "socket", "ChatBackend",
-function ($scope, $location, socket, ChatBackend) {
+["$scope", "$location", "ChatBackend",
+function ($scope, $location, ChatBackend) {
 	
 	if (ChatBackend.isListening === false) {
 		ChatBackend.startListeners();
@@ -22,7 +22,10 @@ function ($scope, $location, socket, ChatBackend) {
 		// But 'str.replace(/ /g, "_")' and 'str.replace(/\s/g, "_")' also works.
 		roomId = roomId.split(" ").join("_");
 		if (ChatBackend.joinRoom(roomId)) {
-			$location.path("/room/" + roomId);
+			setTimeout(function() {
+				$location.path("/room/" + roomId);
+				$scope.$apply();
+			}, 250);
 		}
 		else {
 			console.log("ERROR: joinRoom:false");

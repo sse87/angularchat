@@ -3,7 +3,7 @@
 	<h3>Room list <a href="" ng-click="refreshRoomList()">refresh</a></h3>
 	<ul>
 		<li ng-repeat="room in roomList" ng-class="{connected: room.isConnect}">
-			<a href="" ng-click="joinNewRoom(room.id)">{{room.id}} ({{room.usersCount}}): {{room.topic}}</a>
+			<a href="" ng-click="joinNewRoom(room.id)">{{room.id}} ({{room.usersCount}} users online): {{room.topic}}</a>
 		</li>
 	</ul>
 	<form ng-submit="joinNewRoom(newRoomId)">

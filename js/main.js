@@ -1,5 +1,5 @@
 angular.module("ChatApp", ["ng", "ngRoute"])
-.config(function ($routeProvider) {
+.config(["$routeProvider", function ($routeProvider) {
 	
 	$routeProvider.when("/login", {
 		templateUrl: "/view/login.html",
@@ -32,20 +32,20 @@ angular.module("ChatApp", ["ng", "ngRoute"])
 		templateUrl: "/view/about.html",
 		controller: "AboutCtrl"
 	}).otherwise({ redirectTo: "/login" });
-});
+}]);
 
 
 
 // Constants
-angular.module("ChatApp").constant("BACKEND_URL", "http://localhost:8123");
+//angular.module("ChatApp").constant("BACKEND_URL", "http://localhost:8123");
 
 
 
 // Factory to share the socket methods
 angular.module("ChatApp").factory("socket",
-["$rootScope", "BACKEND_URL",
-function ($rootScope, BACKEND_URL) {
-	var socket = io.connect(BACKEND_URL);
+["$rootScope",
+function ($rootScope) {
+	var socket = io.connect("http://localhost:8123");
 	return {
 		on: function (eventName, callback) {
 			socket.on(eventName, function () {  
@@ -77,11 +77,19 @@ function ($q, socket) {
 	var username = "";
 	var userList = [];
 	var roomList = [];
+	var activeRoom = {};
+	var activeRoomId = "";
+	var activeRoomMsg = [];
+	var activeRoomUserList = [];
 	return {
 		// Variables
 		getUsername: function () { return username; },
 		getUserList: function () { return userList; },
 		getRoomList: function () { return roomList; },
+		getActiveRoom: function () { return activeRoom; },
+		getActiveRoomId: function () { return activeRoomId; },
+		getActiveRoomMsg: function () { return activeRoomMsg; },
+		getActiveRoomUserList: function () { return activeRoomUserList; },
 		// Functions
 		isListening: false,
 		startListeners: function () {
@@ -125,9 +133,35 @@ function ($q, socket) {
 						messages:	list[roomId].messageHistory
 					};
 					tempList.push(room);
+					if (activeRoomId === room.id) {
+						activeRoom = room;
+						activeRoomMsg.length = 0;
+						activeRoomMsg.push.apply(activeRoomMsg, room.messages);
+						activeRoomUserList.length = 0;
+						activeRoomUserList.push.apply(activeRoomUserList, room.users);
+					}
 				}
 				roomList.length = 0;
 				roomList.push.apply(roomList, tempList);
+			});
+			socket.on("updateusers", function (roomId, users, ops) {
+				console.log("updateusers: [" + roomId + "," + users + "," + ops + "]");
+			});
+			socket.on("updatetopic", function (room, topic, username) {
+				console.log("updatetopic: [" + room + "," + topic + "," + username + "]");
+			});
+			// "join", room, socket.username
+			// "part", room, socket.username
+			// "quit", users[socket.username].channels, socket.username
+			socket.on("servermessage", function (type, roomId, username) {
+				console.log("servermessage: [" + type + "," + roomId + "," + username + "]");
+			});
+			socket.on("updatechat", function (roomId, messageHistory) {
+				console.log("updatechat: [" + roomId + "]");
+				if (roomId === activeRoomId) {
+					activeRoomMsg.length = 0;
+					activeRoomMsg.push.apply(activeRoomMsg, messageHistory);
+				}
 			});
 			
 		},
@@ -146,8 +180,12 @@ function ($q, socket) {
 				roomId = roomId.split(" ").join("_");
 				
 				var deferred = $q.defer();
-				socket.emit("joinroom", { room: roomId }, function (data) {
-					deferred.resolve(data);
+				socket.emit("joinroom", { room: roomId }, function (success) {
+					if (success) {
+						activeRoomId = roomId;
+						socket.emit("rooms");
+					}
+					deferred.resolve(success);
 				});
 				return deferred.promise;
 			}
@@ -163,15 +201,22 @@ function ($q, socket) {
 				return null;
 			return roomList[roomIndex];
 		},
-		sendMessage: function (roomId, message) {
-			if (roomId !== "" && message !== "") {
+		partRoom: function () {
+			if (activeRoomId !== "") {
+				socket.emit("partroom", activeRoomId);
+			}
+		},
+		disconnect: function () {
+			socket.emit("disconnect");
+		},
+		sendMessage: function (message) {
+			if (activeRoomId !== "" && message !== "") {
 				if (message.length > 200) { 
 					message = message.substr(0,200);
 				}
 				
 				// Sending message to the room
-				console.log("emit(sendmsg: { roomName: [" + roomId + "], msg: [" + message + "] });");
-				socket.emit("sendmsg", { roomName: roomId, msg: message });
+				socket.emit("sendmsg", { roomName: activeRoomId, msg: message });
 			}
 		},
 		updateRoomList: function () {
@@ -182,34 +227,3 @@ function ($q, socket) {
 		}
 	};
 }]);
-
-/*
-
-Client commands
-	adduser
-	rooms (roomlist)
-	joinroom (updateusers, updatetopic, servermessage:join, updatechat)
-	sendmsg (updatechat)
-	privatemsg (recv_privatemsg)
-	partroom (updateusers, servermessage:part)
-	disconnect (updateusers, servermessage:quit)
-	kick (kicked, updateusers)
-	ban (banned, updateusers)
-	users (userlist)
-	
-Server commands
-	roomlist
-	updateusers
-	updatetopic
-	servermessage[join, part, quit]
-	updatechat
-	recv_privatemsg
-	kicked
-	banned
-	userlist
-
-*/
-
-
-
-
