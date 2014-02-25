@@ -10,7 +10,7 @@ angular.module("ChatApp", ["ng", "ngRoute"])
 		resolve: {
 			this: function ($location, ChatBackend) {
 				// Redirect to login if username is missing
-				if (ChatBackend.username === "") {
+				if (ChatBackend.getUsername() === "") {
 					$location.path("/login");
 					return;
 				}
@@ -20,38 +20,12 @@ angular.module("ChatApp", ["ng", "ngRoute"])
 		templateUrl: "/view/room.html",
 		controller: "RoomCtrl",
 		resolve: {
-			this: function ($q, $location, socket, ChatBackend) {
+			this: function ($location, ChatBackend) {
 				// Redirect to login if username is missing
-				if (ChatBackend.username === "") {
+				if (ChatBackend.getUsername() === "") {
 					$location.path("/login");
 					return;
 				}
-				
-				var deferred = $q.defer();
-				
-				socket.on("roomlist", function (list) {
-					console.log(list);//Object
-					// Reset room list
-					ChatBackend.roomList = [];
-					// Build it up and push it
-					for (var roomId in list) {
-						var room = {
-							id:			roomId,
-							topic:		list[roomId].topic,
-							password:	list[roomId].password,
-							users:		list[roomId].users,
-							ops:		list[roomId].obs,
-							banned:		list[roomId].banned,
-							locked:		list[roomId].locked,
-							messages:	list[roomId].messageHistory
-						};
-						ChatBackend.roomList.push(room);
-					}
-					deferred.resolve();
-				});
-				socket.emit("rooms");
-				
-				return deferred.promise;
 			}
 		}
 	}).when("/about", {
@@ -100,15 +74,67 @@ function ($rootScope, BACKEND_URL) {
 angular.module("ChatApp").factory("ChatBackend",
 ["$q", "socket",
 function ($q, socket) {
+	var username = "";
+	var userList = [];
+	var roomList = [];
 	return {
 		// Variables
-		username: "",
-		userList: [],
-		roomList: [],
+		getUsername: function () { return username; },
+		getUserList: function () { return userList; },
+		getRoomList: function () { return roomList; },
 		// Functions
-		signIn: function (username) {
+		isListening: false,
+		startListeners: function () {
+			this.isListening = true;
+			
+			socket.on("userlist", function (list) {
+				console.log(list);//Array of strings
+				// Build it up and push it
+				var tempList = [];
+				for (var i = 0; i < list.length; i++) {
+					var user = { name: list[i] };
+					tempList.push(user);
+				}
+				userList.length = 0;
+				userList.push.apply(userList, tempList);
+			});
+			socket.on("roomlist", function (list) {
+				console.log(list);//Object
+				// Build it up and push it
+				var tempList = [];
+				for (var roomId in list) {
+					var totalUsers = 0;
+					var isThisUserConnected = false;
+					for (var key in list[roomId].users) {
+						if (list[roomId].users.hasOwnProperty(key)) {
+							totalUsers++;
+							if (key === username)
+								isThisUserConnected = true;
+						}
+					}
+					var room = {
+						id:			roomId,
+						topic:		list[roomId].topic,
+						password:	list[roomId].password,
+						users:		list[roomId].users,
+						usersCount: totalUsers,
+						isConnect:	isThisUserConnected,
+						ops:		list[roomId].obs,
+						banned:		list[roomId].banned,
+						locked:		list[roomId].locked,
+						messages:	list[roomId].messageHistory
+					};
+					tempList.push(room);
+				}
+				roomList.length = 0;
+				roomList.push.apply(roomList, tempList);
+			});
+			
+		},
+		signIn: function (name) {
 			var deferred = $q.defer();
-			socket.emit("adduser", username, function (available) {
+			socket.emit("adduser", name, function (available) {
+				if (available) username = name;
 				deferred.resolve(available);
 			});
 			return deferred.promise;
@@ -128,14 +154,14 @@ function ($q, socket) {
 		},
 		getRoom: function (roomId) {
 			var roomIndex = -1;
-			for (var i = 0; i < this.roomList.length; i++) {
-				if (roomId === this.roomList[i].id) {
+			for (var i = 0; i < roomList.length; i++) {
+				if (roomId === roomList[i].id) {
 					roomIndex = i;
 				}
 			}
 			if (roomIndex === -1)
 				return null;
-			return this.roomList[roomIndex];
+			return roomList[roomIndex];
 		},
 		sendMessage: function (roomId, message) {
 			if (roomId !== "" && message !== "") {

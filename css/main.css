@@ -35,6 +35,9 @@ h3 a {
 /* .roomListSection
 -------------------------*/
 .roomListSection {}
+.roomListSection ul li.connected {
+	font-weight: bold;
+}
 
 
 

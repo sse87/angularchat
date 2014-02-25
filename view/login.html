@@ -12,11 +12,21 @@
 		<div class="warning yellow">
 			<p>We suggest other username like:</p>
 			<ul>
-				<li><a href="" ng-click="selectNick(suggestion1)" ng-bind="suggestion1 = takenUsername + '1'"></a></li>
-				<li><a href="" ng-click="selectNick(suggestion2)" ng-bind="suggestion2 = takenUsername + '420'"></a></li>
-				<li><a href="" ng-click="selectNick(suggestion3)" ng-bind="suggestion3 = takenUsername + '_p3n15'"></a></li>
-				<li><a href="" ng-click="selectNick(suggestion4)" ng-bind="suggestion4 = takenUsername + '_asdf'"></a></li>
-				<li><a href="" ng-click="selectNick(suggestion5)" ng-bind="suggestion5 = takenUsername + '_was_taken'"></a></li>
+				<li ng-hide="suggestion1.length > 19">
+					<a href="" ng-click="selectNick(suggestion1)" ng-bind="suggestion1 = takenUsername + '1'"></a>
+				</li>
+				<li ng-hide="suggestion2.length > 19">
+					<a href="" ng-click="selectNick(suggestion2)" ng-bind="suggestion2 = takenUsername + '420'"></a>
+				</li>
+				<li ng-hide="suggestion3.length > 19">
+					<a href="" ng-click="selectNick(suggestion3)" ng-bind="suggestion3 = takenUsername + '_p3n15'"></a>
+				</li>
+				<li ng-hide="suggestion4.length > 19">
+					<a href="" ng-click="selectNick(suggestion4)" ng-bind="suggestion4 = takenUsername + '_asdf'"></a>
+				</li>
+				<li ng-hide="suggestion5.length > 19">
+					<a href="" ng-click="selectNick(suggestion5)" ng-bind="suggestion5 = takenUsername + '_was_taken'"></a>
+				</li>
 			</ul>
 		</div>
 	</div>

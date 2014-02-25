@@ -10,7 +10,6 @@ function ($scope, $location, ChatBackend) {
 	$scope.signInClick = function (username) {
 		ChatBackend.signIn(username).then(function (available) {
 			if (available) {
-				ChatBackend.username = username;
 				$location.path("/index");
 			}
 			else {
@@ -19,6 +18,6 @@ function ($scope, $location, ChatBackend) {
 		});
 	};
 	
-	$scope.prevUsername = ChatBackend.username;
+	$scope.prevUsername = ChatBackend.getUsername();
 	
 }]);
