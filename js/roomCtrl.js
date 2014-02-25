@@ -11,6 +11,7 @@ function ($scope, $routeParams, $location, ChatBackend) {
 	$scope.partRoom = function () {
 		ChatBackend.partRoom();
 		$location.path("/index");
+		$scope.$apply();
 	};
 	
 	// Get right room by roomId

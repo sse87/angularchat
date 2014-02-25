@@ -24,6 +24,7 @@ C:\Python27\python.exe -m SimpleHTTPServer
 node chatserver.js
 
 ```
+Note: chatserver.js need to be set to port 8123
 
 
 And open `http://localhost:8000` in your browser. Optionally specify
