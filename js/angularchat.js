@@ -182,3 +182,117 @@ function ($q, socket) {
 		}
 	};
 }]);
+
+angular.module("ChatApp").controller("AboutCtrl",
+["$scope",
+function ($scope) {
+	
+	
+}]);
+
+angular.module("ChatApp").controller("HomeCtrl",
+["$scope", "$location", "socket", "ChatBackend",
+function ($scope, $location, socket, ChatBackend) {
+	
+	if (ChatBackend.isListening === false) {
+		ChatBackend.startListeners();
+	}
+	
+	
+	// Functions
+	$scope.refreshRoomList = function () {
+		ChatBackend.updateRoomList();
+	};
+	$scope.refreshUserList = function () {
+		console.log(ChatBackend.getUserList());
+		ChatBackend.updateUserList();
+		console.log(ChatBackend.getUserList());
+	};
+	$scope.joinNewRoom = function (roomId) {
+		console.log("joinNewRoom(" + roomId + ");");
+		// Replace all spaces with plus, the str.replace(" ","") only replace one case.
+		// But 'str.replace(/ /g, "_")' and 'str.replace(/\s/g, "_")' also works.
+		roomId = roomId.split(" ").join("_");
+		if (ChatBackend.joinRoom(roomId)) {
+			$location.path("/room/" + roomId);
+		}
+		else {
+			console.log("ERROR: joinRoom:false");
+		}
+	};
+	
+	$scope.userList = ChatBackend.getUserList();
+	$scope.roomList = ChatBackend.getRoomList();
+	
+	// Display username
+	$scope.username = ChatBackend.getUsername();
+	
+	// Call for update of user list
+	ChatBackend.updateUserList();
+	// Call for update of room list
+	ChatBackend.updateRoomList();
+}]);
+
+angular.module("ChatApp").controller("LoginCtrl",
+["$scope", "$location", "ChatBackend",
+function ($scope, $location, ChatBackend) {
+	
+	$scope.takenUsername = "";
+	$scope.selectNick = function (username) {
+		$scope.username = username;
+	};
+	
+	$scope.signInClick = function (username) {
+		ChatBackend.signIn(username).then(function (available) {
+			if (available) {
+				$location.path("/index");
+			}
+			else {
+				$scope.takenUsername = username;
+			}
+		});
+	};
+	
+	$scope.prevUsername = ChatBackend.getUsername();
+	
+}]);
+
+angular.module("ChatApp").controller("RoomCtrl",
+["$scope", "$routeParams", "socket", "ChatBackend",
+function ($scope, $routeParams, socket, ChatBackend) {
+	
+	socket.on("updateusers", function (roomId, users, ops) {
+		console.log("updateusers: [" + roomId + "," + users + "," + ops + "]");
+	});
+	socket.on("updatetopic", function (data) {
+		console.log("updatetopic: " + data);
+	});
+	// "join", room, socket.username
+	// "part", room, socket.username
+	// "quit", users[socket.username].channels, socket.username
+	socket.on("servermessage", function (type, roomId, username) {
+		console.log("servermessage: [" + type + "," + roomId + "," + username + "]");
+	});
+	socket.on("updatechat", function (roomId, messageHistory) {
+		console.log("updatechat: [" + roomId + "]");
+		if (roomId === $scope.currentRoom.id) {
+			$scope.messages = messageHistory;
+		}
+	});
+	
+	
+	$scope.msgSubmit = function (message) {
+		var msg = message;
+		$scope.message = "";
+		
+		ChatBackend.sendMessage($scope.currentRoom.id, msg);
+	};
+	
+	// Get right room by roomId
+	var room = ChatBackend.getRoom($routeParams.roomId);
+	if (room !== null) {
+		$scope.currentRoom = room;
+		$scope.messages = room.messages;
+	}
+	
+}]);
