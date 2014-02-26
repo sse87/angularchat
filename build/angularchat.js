@@ -77,11 +77,17 @@ function ($q, socket) {
 	var username = "";
 	var userList = [];
 	var roomList = [];
+	var activeRoomId = "";
+	var activeRoomMsg = [];
+	var activeRoomUserList = [];
 	return {
 		// Variables
 		getUsername: function () { return username; },
 		getUserList: function () { return userList; },
 		getRoomList: function () { return roomList; },
+		getActiveRoomId: function () { return activeRoomId; },
+		getActiveRoomMsg: function () { return activeRoomMsg; },
+		getActiveRoomUserList: function () { return activeRoomUserList; },
 		// Functions
 		isListening: false,
 		startListeners: function () {
@@ -103,11 +109,11 @@ function ($q, socket) {
 				// Build it up and push it
 				var tempList = [];
 				for (var roomId in list) {
-					var totalUsers = 0;
 					var isThisUserConnected = false;
+					var tempUserList = [];
 					for (var key in list[roomId].users) {
 						if (list[roomId].users.hasOwnProperty(key)) {
-							totalUsers++;
+							tempUserList.push(key);
 							if (key === username)
 								isThisUserConnected = true;
 						}
@@ -116,8 +122,8 @@ function ($q, socket) {
 						id:			roomId,
 						topic:		list[roomId].topic,
 						password:	list[roomId].password,
-						users:		list[roomId].users,
-						usersCount: totalUsers,
+						users:		tempUserList,
+						usersCount: tempUserList.length,
 						isConnect:	isThisUserConnected,
 						ops:		list[roomId].obs,
 						banned:		list[roomId].banned,
@@ -125,9 +131,47 @@ function ($q, socket) {
 						messages:	list[roomId].messageHistory
 					};
 					tempList.push(room);
+					if (activeRoomId === room.id) {
+						activeRoomMsg.length = 0;
+						activeRoomMsg.push.apply(activeRoomMsg, room.messages);
+						activeRoomUserList.length = 0;
+						activeRoomUserList.push.apply(activeRoomUserList, room.users);
+					}
 				}
 				roomList.length = 0;
 				roomList.push.apply(roomList, tempList);
+			});
+			socket.on("updateusers", function (roomId, users, ops) {
+				if (roomId === activeRoomId) {
+					var tempList = [], key;
+					for (key in ops) {
+						tempList.push(key);
+					}
+					for (key in users) {
+						tempList.push(key);
+					}
+					activeRoomUserList.length = 0;
+					activeRoomUserList.push.apply(activeRoomUserList, tempList);
+				}
+				// console.log("updateusers: " + roomId);
+				// console.log(users);
+				// console.log(ops);
+			});
+			socket.on("updatetopic", function (room, topic, username) {
+				console.log("updatetopic: [" + room + "," + topic + "," + username + "]");
+			});
+			// "join", room, socket.username
+			// "part", room, socket.username
+			// "quit", users[socket.username].channels, socket.username
+			socket.on("servermessage", function (type, roomId, username) {
+				console.log("servermessage: [" + type + "," + roomId + "," + username + "]");
+			});
+			socket.on("updatechat", function (roomId, messageHistory) {
+				console.log("updatechat: [" + roomId + "]");
+				if (roomId === activeRoomId) {
+					activeRoomMsg.length = 0;
+					activeRoomMsg.push.apply(activeRoomMsg, messageHistory);
+				}
 			});
 			
 		},
@@ -146,8 +190,12 @@ function ($q, socket) {
 				roomId = roomId.split(" ").join("_");
 				
 				var deferred = $q.defer();
-				socket.emit("joinroom", { room: roomId }, function (data) {
-					deferred.resolve(data);
+				socket.emit("joinroom", { room: roomId }, function (success) {
+					if (success) {
+						activeRoomId = roomId;
+						socket.emit("rooms");
+					}
+					deferred.resolve(success);
 				});
 				return deferred.promise;
 			}
@@ -163,15 +211,53 @@ function ($q, socket) {
 				return null;
 			return roomList[roomIndex];
 		},
-		sendMessage: function (roomId, message) {
-			if (roomId !== "" && message !== "") {
+		partRoom: function (roomId) {
+			if (roomId !== "") {
+				socket.emit("partroom", roomId);
+			}
+			else if (activeRoomId !== "") {
+				socket.emit("partroom", activeRoomId);
+			}
+		},
+		disconnect: function () {
+			socket.emit("disconnect");
+		},
+		sendMessage: function (message) {
+			if (activeRoomId !== "" && message !== "") {
 				if (message.length > 200) { 
 					message = message.substr(0,200);
 				}
 				
 				// Sending message to the room
-				console.log("emit(sendmsg: { roomName: [" + roomId + "], msg: [" + message + "] });");
-				socket.emit("sendmsg", { roomName: roomId, msg: message });
+				socket.emit("sendmsg", { roomName: activeRoomId, msg: message });
+			}
+		},
+		kickUser: function (name, roomId) {
+			console.log("kickUser(" + name + ", " + roomId + ")");
+			if (name !== "" && roomId !== "") {
+				var deferred = $q.defer();
+				socket.emit("kick", { user: name, room: roomId }, function (success) {
+					console.log("kick?: " + success);
+					if (success) {
+						// 
+					}
+					deferred.resolve(success);
+				});
+				return deferred.promise;
+			}
+		},
+		banUser: function (name, roomId) {
+			console.log("banUser(" + name + ", " + roomId + ")");
+			if (name !== "" && roomId !== "") {
+				var deferred = $q.defer();
+				socket.emit("ban", { user: name, room: roomId }, function (success) {
+					console.log("ban?: " + success);
+					if (success) {
+						// 
+					}
+					deferred.resolve(success);
+				});
+				return deferred.promise;
 			}
 		},
 		updateRoomList: function () {
@@ -191,8 +277,8 @@ function ($scope) {
 }]);
 
 angular.module("ChatApp").controller("HomeCtrl",
-["$scope", "$location", "socket", "ChatBackend",
-function ($scope, $location, socket, ChatBackend) {
+["$scope", "$location", "ChatBackend",
+function ($scope, $location, ChatBackend) {
 	
 	if (ChatBackend.isListening === false) {
 		ChatBackend.startListeners();
@@ -204,12 +290,9 @@ function ($scope, $location, socket, ChatBackend) {
 		ChatBackend.updateRoomList();
 	};
 	$scope.refreshUserList = function () {
-		console.log(ChatBackend.getUserList());
 		ChatBackend.updateUserList();
-		console.log(ChatBackend.getUserList());
 	};
 	$scope.joinNewRoom = function (roomId) {
-		console.log("joinNewRoom(" + roomId + ");");
 		// Replace all spaces with plus, the str.replace(" ","") only replace one case.
 		// But 'str.replace(/ /g, "_")' and 'str.replace(/\s/g, "_")' also works.
 		roomId = roomId.split(" ").join("_");
@@ -219,6 +302,10 @@ function ($scope, $location, socket, ChatBackend) {
 		else {
 			console.log("ERROR: joinRoom:false");
 		}
+	};
+	$scope.partRoom = function (roomId) {
+		ChatBackend.partRoom(roomId);
+		ChatBackend.updateRoomList();
 	};
 	
 	$scope.userList = ChatBackend.getUserList();
@@ -258,41 +345,53 @@ function ($scope, $location, ChatBackend) {
 }]);
 
 angular.module("ChatApp").controller("RoomCtrl",
-["$scope", "$routeParams", "socket", "ChatBackend",
-function ($scope, $routeParams, socket, ChatBackend) {
-	
-	socket.on("updateusers", function (roomId, users, ops) {
-		console.log("updateusers: [" + roomId + "," + users + "," + ops + "]");
-	});
-	socket.on("updatetopic", function (data) {
-		console.log("updatetopic: " + data);
-	});
-	// "join", room, socket.username
-	// "part", room, socket.username
-	// "quit", users[socket.username].channels, socket.username
-	socket.on("servermessage", function (type, roomId, username) {
-		console.log("servermessage: [" + type + "," + roomId + "," + username + "]");
-	});
-	socket.on("updatechat", function (roomId, messageHistory) {
-		console.log("updatechat: [" + roomId + "]");
-		if (roomId === $scope.currentRoom.id) {
-			$scope.messages = messageHistory;
-		}
-	});
-	
+["$scope", "$routeParams", "$location", "ChatBackend",
+function ($scope, $routeParams, $location, ChatBackend) {
 	
 	$scope.msgSubmit = function (message) {
 		var msg = message;
 		$scope.message = "";
 		
-		ChatBackend.sendMessage($scope.currentRoom.id, msg);
+		ChatBackend.sendMessage(msg);
+	};
+	$scope.partRoom = function () {
+		ChatBackend.partRoom("");
+		$location.path("/index");
+	};
+	$scope.kick = function (username, roomId) {
+		ChatBackend.kickUser(username, roomId);
+	};
+	$scope.ban = function (username, roomId) {
+		ChatBackend.banUser(username, roomId);
 	};
 	
 	// Get right room by roomId
 	var room = ChatBackend.getRoom($routeParams.roomId);
+	var myUsername = ChatBackend.getUsername();
 	if (room !== null) {
 		$scope.currentRoom = room;
-		$scope.messages = room.messages;
+		for (var key in room.banned) {
+			if (key === myUsername) {
+				$location.path("/index");
+			}
+		}
 	}
+	else {
+		setTimeout(function() {
+			var room = ChatBackend.getRoom($routeParams.roomId);
+			if (room !== null) {
+				$scope.currentRoom = room;
+				for (var key in room.banned) {
+					if (key === myUsername) {
+						$location.path("/index");
+					}
+				}
+				$scope.$apply();
+			}
+		}, 1000);
+	}
+	
+	$scope.userList = ChatBackend.getActiveRoomUserList();
+	$scope.messages = ChatBackend.getActiveRoomMsg();
 	
 }]);

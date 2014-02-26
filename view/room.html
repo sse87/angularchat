@@ -1,13 +1,14 @@
 <section class="roomSection">
-	<a href="javascript:window.history.back();">Back</a>
 	<a href="" ng-click="partRoom()">Leave chatroom</a>
+	<span> - </span>
+	<a href="javascript:window.history.back();">Back</a>
 	<h2 ng-bind="currentRoom.id"></h2>
 	<h3 ng-bind="currentRoom.topic"></h3>
 	<ul>
-		<li ng-repeat="user in userList">
-			<span ng-bind="user.name"></span>
-			[<a href="" ng-click="kick(user.name)">Kick</a>]
-			[<a href="" ng-click="bann(user.name)">Bann</a>]
+		<li ng-repeat="username in userList">
+			<span ng-bind="username"></span>
+			[<a href="" ng-click="kick(username, currentRoom.id)">Kick</a>]
+			[<a href="" ng-click="ban(username, currentRoom.id)">Bann</a>]
 		</li>
 	</ul>
 	<div class="chat">

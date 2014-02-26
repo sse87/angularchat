@@ -2,6 +2,14 @@
 h3 a {
 	font-size: 75%;
 }
+a {
+	color: #0000FF;
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+
 
 
 .warning {

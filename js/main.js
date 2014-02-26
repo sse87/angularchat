@@ -77,7 +77,6 @@ function ($q, socket) {
 	var username = "";
 	var userList = [];
 	var roomList = [];
-	var activeRoom = {};
 	var activeRoomId = "";
 	var activeRoomMsg = [];
 	var activeRoomUserList = [];
@@ -86,7 +85,6 @@ function ($q, socket) {
 		getUsername: function () { return username; },
 		getUserList: function () { return userList; },
 		getRoomList: function () { return roomList; },
-		getActiveRoom: function () { return activeRoom; },
 		getActiveRoomId: function () { return activeRoomId; },
 		getActiveRoomMsg: function () { return activeRoomMsg; },
 		getActiveRoomUserList: function () { return activeRoomUserList; },
@@ -111,11 +109,11 @@ function ($q, socket) {
 				// Build it up and push it
 				var tempList = [];
 				for (var roomId in list) {
-					var totalUsers = 0;
 					var isThisUserConnected = false;
+					var tempUserList = [];
 					for (var key in list[roomId].users) {
 						if (list[roomId].users.hasOwnProperty(key)) {
-							totalUsers++;
+							tempUserList.push(key);
 							if (key === username)
 								isThisUserConnected = true;
 						}
@@ -124,8 +122,8 @@ function ($q, socket) {
 						id:			roomId,
 						topic:		list[roomId].topic,
 						password:	list[roomId].password,
-						users:		list[roomId].users,
-						usersCount: totalUsers,
+						users:		tempUserList,
+						usersCount: tempUserList.length,
 						isConnect:	isThisUserConnected,
 						ops:		list[roomId].obs,
 						banned:		list[roomId].banned,
@@ -134,7 +132,6 @@ function ($q, socket) {
 					};
 					tempList.push(room);
 					if (activeRoomId === room.id) {
-						activeRoom = room;
 						activeRoomMsg.length = 0;
 						activeRoomMsg.push.apply(activeRoomMsg, room.messages);
 						activeRoomUserList.length = 0;
@@ -145,7 +142,20 @@ function ($q, socket) {
 				roomList.push.apply(roomList, tempList);
 			});
 			socket.on("updateusers", function (roomId, users, ops) {
-				console.log("updateusers: [" + roomId + "," + users + "," + ops + "]");
+				if (roomId === activeRoomId) {
+					var tempList = [], key;
+					for (key in ops) {
+						tempList.push(key);
+					}
+					for (key in users) {
+						tempList.push(key);
+					}
+					activeRoomUserList.length = 0;
+					activeRoomUserList.push.apply(activeRoomUserList, tempList);
+				}
+				// console.log("updateusers: " + roomId);
+				// console.log(users);
+				// console.log(ops);
 			});
 			socket.on("updatetopic", function (room, topic, username) {
 				console.log("updatetopic: [" + room + "," + topic + "," + username + "]");
@@ -201,8 +211,11 @@ function ($q, socket) {
 				return null;
 			return roomList[roomIndex];
 		},
-		partRoom: function () {
-			if (activeRoomId !== "") {
+		partRoom: function (roomId) {
+			if (roomId !== "") {
+				socket.emit("partroom", roomId);
+			}
+			else if (activeRoomId !== "") {
 				socket.emit("partroom", activeRoomId);
 			}
 		},
@@ -217,6 +230,34 @@ function ($q, socket) {
 				
 				// Sending message to the room
 				socket.emit("sendmsg", { roomName: activeRoomId, msg: message });
+			}
+		},
+		kickUser: function (name, roomId) {
+			console.log("kickUser(" + name + ", " + roomId + ")");
+			if (name !== "" && roomId !== "") {
+				var deferred = $q.defer();
+				socket.emit("kick", { user: name, room: roomId }, function (success) {
+					console.log("kick?: " + success);
+					if (success) {
+						// 
+					}
+					deferred.resolve(success);
+				});
+				return deferred.promise;
+			}
+		},
+		banUser: function (name, roomId) {
+			console.log("banUser(" + name + ", " + roomId + ")");
+			if (name !== "" && roomId !== "") {
+				var deferred = $q.defer();
+				socket.emit("ban", { user: name, room: roomId }, function (success) {
+					console.log("ban?: " + success);
+					if (success) {
+						// 
+					}
+					deferred.resolve(success);
+				});
+				return deferred.promise;
 			}
 		},
 		updateRoomList: function () {

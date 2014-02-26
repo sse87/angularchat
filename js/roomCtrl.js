@@ -9,17 +9,42 @@ function ($scope, $routeParams, $location, ChatBackend) {
 		ChatBackend.sendMessage(msg);
 	};
 	$scope.partRoom = function () {
-		ChatBackend.partRoom();
+		ChatBackend.partRoom("");
 		$location.path("/index");
-		$scope.$apply();
+	};
+	$scope.kick = function (username, roomId) {
+		ChatBackend.kickUser(username, roomId);
+	};
+	$scope.ban = function (username, roomId) {
+		ChatBackend.banUser(username, roomId);
 	};
 	
 	// Get right room by roomId
 	var room = ChatBackend.getRoom($routeParams.roomId);
+	var myUsername = ChatBackend.getUsername();
 	if (room !== null) {
 		$scope.currentRoom = room;
+		for (var key in room.banned) {
+			if (key === myUsername) {
+				$location.path("/index");
+			}
+		}
 	}
-	//$scope.currentRoom = ChatBackend.getActiveRoom();
+	else {
+		setTimeout(function() {
+			var room = ChatBackend.getRoom($routeParams.roomId);
+			if (room !== null) {
+				$scope.currentRoom = room;
+				for (var key in room.banned) {
+					if (key === myUsername) {
+						$location.path("/index");
+					}
+				}
+				$scope.$apply();
+			}
+		}, 1000);
+	}
+	
 	$scope.userList = ChatBackend.getActiveRoomUserList();
 	$scope.messages = ChatBackend.getActiveRoomMsg();
 	

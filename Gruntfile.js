@@ -2,7 +2,9 @@ module.exports = function(grunt) {
 
   // Project configuration.
   grunt.initConfig({
+    
     pkg: grunt.file.readJSON('package.json'),
+    
     jshint: {
       build: {
         src: 'js/*.js'
@@ -12,7 +14,7 @@ module.exports = function(grunt) {
     concat: {
       foo: {
         src: ['js/main.js', 'js/*.js'],
-        dest: 'js/<%= pkg.name %>.js'
+        dest: 'build/<%= pkg.name %>.js'
       }
  
     },
@@ -24,16 +26,26 @@ module.exports = function(grunt) {
       },
       build: {
         src: '<%= concat.foo.dest %>',
-        dest: 'js/<%= pkg.name %>.min.js'
+        dest: 'build/<%= pkg.name %>.min.js'
+      }
+    },
+    
+    watch: {
+      scripts: {
+        files: ['js/*.js'],
+        tasks: ['jshint', 'concat', 'uglify']
       }
     }
+    
   });
  
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-watch');
  
   // Default task(s).
+  grunt.registerTask('dev', ['watch']);
   grunt.registerTask('default', ['jshint', 'concat', 'uglify']);
 };

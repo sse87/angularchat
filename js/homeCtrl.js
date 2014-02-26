@@ -12,24 +12,22 @@ function ($scope, $location, ChatBackend) {
 		ChatBackend.updateRoomList();
 	};
 	$scope.refreshUserList = function () {
-		console.log(ChatBackend.getUserList());
 		ChatBackend.updateUserList();
-		console.log(ChatBackend.getUserList());
 	};
 	$scope.joinNewRoom = function (roomId) {
-		console.log("joinNewRoom(" + roomId + ");");
 		// Replace all spaces with plus, the str.replace(" ","") only replace one case.
 		// But 'str.replace(/ /g, "_")' and 'str.replace(/\s/g, "_")' also works.
 		roomId = roomId.split(" ").join("_");
 		if (ChatBackend.joinRoom(roomId)) {
-			setTimeout(function() {
-				$location.path("/room/" + roomId);
-				$scope.$apply();
-			}, 250);
+			$location.path("/room/" + roomId);
 		}
 		else {
 			console.log("ERROR: joinRoom:false");
 		}
+	};
+	$scope.partRoom = function (roomId) {
+		ChatBackend.partRoom(roomId);
+		ChatBackend.updateRoomList();
 	};
 	
 	$scope.userList = ChatBackend.getUserList();

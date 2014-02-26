@@ -4,6 +4,7 @@
 	<ul>
 		<li ng-repeat="room in roomList" ng-class="{connected: room.isConnect}">
 			<a href="" ng-click="joinNewRoom(room.id)">{{room.id}} ({{room.usersCount}} users online): {{room.topic}}</a>
+			<span ng-show="room.isConnect">[<a href="" ng-click="partRoom(room.id)">Leave</a>]</span>
 		</li>
 	</ul>
 	<form ng-submit="joinNewRoom(newRoomId)">
