@@ -24,9 +24,16 @@ function ($scope, $routeParams, $location, ChatBackend) {
 	var myUsername = ChatBackend.getUsername();
 	if (room !== null) {
 		$scope.currentRoom = room;
-		for (var key in room.banned) {
+		// Check if user is banned
+		var key;
+		for (key in room.banned) {
 			if (key === myUsername) {
 				$location.path("/index");
+			}
+		}
+		for (key in room.ops) {
+			if (key === myUsername) {
+				$scope.isOp = true;
 			}
 		}
 	}
@@ -35,9 +42,15 @@ function ($scope, $routeParams, $location, ChatBackend) {
 			var room = ChatBackend.getRoom($routeParams.roomId);
 			if (room !== null) {
 				$scope.currentRoom = room;
-				for (var key in room.banned) {
+				var key;
+				for (key in room.banned) {
 					if (key === myUsername) {
 						$location.path("/index");
+					}
+				}
+				for (key in room.ops) {
+					if (key === myUsername) {
+						$scope.isOp = true;
 					}
 				}
 				$scope.$apply();

@@ -2,9 +2,9 @@
 	<h2>Username: {{username}}</h2>
 	<h3>Room list <a href="" ng-click="refreshRoomList()">refresh</a></h3>
 	<ul>
-		<li ng-repeat="room in roomList" ng-class="{connected: room.isConnect}">
-			<a href="" ng-click="joinNewRoom(room.id)">{{room.id}} ({{room.usersCount}} users online): {{room.topic}}</a>
-			<span ng-show="room.isConnect">[<a href="" ng-click="partRoom(room.id)">Leave</a>]</span>
+		<li ng-repeat="room in roomList" ng-class="{connected: room.isConnect, op: room.isOp}">
+			<a href="" ng-click="joinNewRoom(room.id)">{{room.id}} ({{room.usersCount + room.opsCount}} users online): {{room.topic}}</a>
+			<span ng-show="room.isConnect || room.isOp">[<a href="" ng-click="partRoom(room.id)">Leave</a>]</span>
 		</li>
 	</ul>
 	<form ng-submit="joinNewRoom(newRoomId)">

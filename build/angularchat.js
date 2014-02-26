@@ -111,12 +111,17 @@ function ($q, socket) {
 				for (var roomId in list) {
 					var isThisUserConnected = false;
 					var tempUserList = [];
-					for (var key in list[roomId].users) {
-						if (list[roomId].users.hasOwnProperty(key)) {
-							tempUserList.push(key);
-							if (key === username)
-								isThisUserConnected = true;
-						}
+					for (var user in list[roomId].users) {
+						tempUserList.push(user);
+						if (user === username)
+							isThisUserConnected = true;
+					}
+					var isThisUserOp = false;
+					var tempOpList = [];
+					for (var op in list[roomId].ops) {
+						tempOpList.push(op);
+						if (op === username)
+							isThisUserOp = true;
 					}
 					var room = {
 						id:			roomId,
@@ -125,7 +130,9 @@ function ($q, socket) {
 						users:		tempUserList,
 						usersCount: tempUserList.length,
 						isConnect:	isThisUserConnected,
-						ops:		list[roomId].obs,
+						ops:		tempOpList,
+						opsCount:	tempOpList.length,
+						isOp:		isThisUserOp,
 						banned:		list[roomId].banned,
 						locked:		list[roomId].locked,
 						messages:	list[roomId].messageHistory
@@ -135,6 +142,7 @@ function ($q, socket) {
 						activeRoomMsg.length = 0;
 						activeRoomMsg.push.apply(activeRoomMsg, room.messages);
 						activeRoomUserList.length = 0;
+						activeRoomUserList.push.apply(activeRoomUserList, room.ops);
 						activeRoomUserList.push.apply(activeRoomUserList, room.users);
 					}
 				}
@@ -370,9 +378,16 @@ function ($scope, $routeParams, $location, ChatBackend) {
 	var myUsername = ChatBackend.getUsername();
 	if (room !== null) {
 		$scope.currentRoom = room;
-		for (var key in room.banned) {
+		// Check if user is banned
+		var key;
+		for (key in room.banned) {
 			if (key === myUsername) {
 				$location.path("/index");
+			}
+		}
+		for (key in room.ops) {
+			if (key === myUsername) {
+				$scope.isOp = true;
 			}
 		}
 	}
@@ -381,9 +396,15 @@ function ($scope, $routeParams, $location, ChatBackend) {
 			var room = ChatBackend.getRoom($routeParams.roomId);
 			if (room !== null) {
 				$scope.currentRoom = room;
-				for (var key in room.banned) {
+				var key;
+				for (key in room.banned) {
 					if (key === myUsername) {
 						$location.path("/index");
+					}
+				}
+				for (key in room.ops) {
+					if (key === myUsername) {
+						$scope.isOp = true;
 					}
 				}
 				$scope.$apply();

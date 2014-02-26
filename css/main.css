@@ -46,6 +46,10 @@ a:hover {
 .roomListSection ul li.connected {
 	font-weight: bold;
 }
+.roomListSection ul li.op {
+	font-style: italic;
+	font-weight: bold;
+}
 
 
 

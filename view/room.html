@@ -5,10 +5,12 @@
 	<h2 ng-bind="currentRoom.id"></h2>
 	<h3 ng-bind="currentRoom.topic"></h3>
 	<ul>
-		<li ng-repeat="username in userList">
+		<li ng-repeat="username in userList track by $index">
 			<span ng-bind="username"></span>
-			[<a href="" ng-click="kick(username, currentRoom.id)">Kick</a>]
-			[<a href="" ng-click="ban(username, currentRoom.id)">Bann</a>]
+			<span ng-show="isOp">
+				[<a href="" ng-click="kick(username, currentRoom.id)">Kick</a>]
+				[<a href="" ng-click="ban(username, currentRoom.id)">Bann</a>]
+			</span>
 		</li>
 	</ul>
 	<div class="chat">
@@ -21,16 +23,19 @@
 	<form ng-submit="msgSubmit(message)">
 		<input type="text" class="msg" ng-model="message" autofocus />
 	</form>
+	Debug info
 	<ul>
-		<li>Id: {{currentRoom.id}}</li>
-		<li>Topic: {{currentRoom.topic}}</li>
-		<li>Password: {{currentRoom.password}}</li>
-		<li>Users: {{currentRoom.users}}</li>
+		<li>id: {{currentRoom.id}}</li>
+		<li>topic: {{currentRoom.topic}}</li>
+		<li>password: {{currentRoom.password}}</li>
+		<li>users: {{currentRoom.users}}</li>
 		<li>usersCount: {{currentRoom.usersCount}}</li>
 		<li>isConnect: {{currentRoom.isConnect}}</li>
-		<li>Ops: {{currentRoom.ops}}</li>
-		<li>Banned: {{currentRoom.banned}}</li>
-		<li>Locked: {{currentRoom.locked}}</li>
-		<li>Messages: {{currentRoom.messages}}</li>
+		<li>ops: {{currentRoom.ops}}</li>
+		<li>opsCount: {{currentRoom.opsCount}}</li>
+		<li>isOp: {{currentRoom.isOp}}</li>
+		<li>banned: {{currentRoom.banned}}</li>
+		<li>locked: {{currentRoom.locked}}</li>
+		<li>messages: {{currentRoom.messages}}</li>
 	</ul>
 </section>
